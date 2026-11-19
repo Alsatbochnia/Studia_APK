@@ -1,0 +1,116 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plan PK</title><link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
+<style>
+:root{--bg:#15161b;--card:#1f2026;--bd:#2d2f37;--tx:#f2f3f5;--mut:#9a9da8;--ac:#7b9cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 Inter,system-ui,sans-serif;padding:env(safe-area-inset-top) 0 40px}
+.w{max-width:720px;margin:0 auto;padding:0 16px}
+header{display:flex;gap:10px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bd);max-width:720px;margin:auto}
+input,select,button{font:inherit;color:var(--tx)}
+input{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px 16px}
+.pri{background:var(--ac);color:#10131c;border:0;border-radius:14px;padding:12px 18px;font-weight:600;cursor:pointer}
+.btn{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;cursor:pointer;flex:1}
+.row{display:flex;gap:10px;margin:12px 0}
+h1{font-size:40px;line-height:1.1;margin:40px 0 16px;letter-spacing:-1px}h2{margin:20px 0 4px;font-size:34px}
+.mut{color:var(--mut)}.cap{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin:26px 0 10px}
+.chip{display:inline-block;background:var(--card);border:1px solid var(--bd);border-radius:99px;padding:8px 18px;margin:0 6px 8px 0;cursor:pointer}
+.chip.on{background:var(--ac);color:#10131c;border-color:var(--ac)}.chip.off{text-decoration:line-through;opacity:.5}
+.feat{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:18px;margin:12px 0}.feat b{display:block;margin-bottom:6px}
+.day{background:var(--card);border:1px solid var(--bd);border-radius:18px;margin:14px 0;overflow:hidden}
+.day>.h{padding:14px 18px;border-bottom:1px solid var(--bd)}.day.today .h b{color:var(--ac)}
+.ev{display:flex;gap:16px;padding:14px 18px;border-bottom:1px solid var(--bd);cursor:pointer}.ev:last-child{border:0}
+.ev.past{opacity:.55}.t{width:60px;font-size:18px;font-weight:500}.t span{display:block;color:var(--mut);font-size:16px}
+.bar{width:4px;border-radius:3px}.ev b{font-size:19px}
+#grid{display:grid;grid-template-columns:44px repeat(5,1fr);background:var(--card);border:1px solid var(--bd);border-radius:18px;overflow:hidden;font-size:11px}
+.gh{padding:8px 2px;text-align:center;border-bottom:1px solid var(--bd);border-left:1px solid var(--bd)}.gh.today{color:var(--ac)}
+.col{position:relative;border-left:1px solid var(--bd)}.hr{position:absolute;left:0;right:0;border-top:1px solid var(--bd)}.hl{position:absolute;right:4px;color:var(--mut)}
+.blk{position:absolute;border-radius:8px;border-left:3px solid;padding:3px 4px;overflow:hidden;cursor:pointer;font-size:10.5px}
+.blk small{display:block;text-transform:uppercase;font-weight:700;opacity:.8}
+.seg{display:flex;background:var(--card);border-radius:14px;padding:4px;margin:12px 0}.seg button{flex:1;background:0;border:0;padding:10px;border-radius:10px;cursor:pointer;color:var(--mut)}.seg .on{background:var(--bg);color:var(--tx)}
+.sheet{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:9}.sheet.on{display:flex}
+.sheet>div{background:var(--card);width:100%;max-width:720px;max-height:88vh;overflow:auto;border-radius:24px 24px 0 0;padding:20px}
+.badge{display:inline-block;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:700;text-transform:uppercase}
+label.sb{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--bd)}.dot{width:12px;height:12px;border-radius:4px}
+select{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;flex:2}
+</style></head><body>
+<div id="app"></div>
+<div class="sheet" id="sh"><div id="shc"></div></div>
+<script>
+const $=s=>document.querySelector(s),TYPES={W:'Wykład',C:'Ćwiczenia',P:'Projekt',L:'Laboratorium',S:'Seminarium',K:'Komputerowe',E:'E-learning'};
+const DN=['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'],MN=['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'],MS=['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
+const GROUPS={11:'A1 A2 A3 B1 I1 I2 K1 K2 L1 L2 M1 M2 M3 S1 S2 T1 T2 W1',12:'A1 A2 A3 B1 I1 K1 K2 L1 L2 M1 M2 S1 S2 T1 W1',13:'B1 K1 K2 S1 S3 W1',14:'B1 K1 K2 K3 S1 S2 W1'};
+const ls=(k,v)=>v===undefined?JSON.parse(localStorage.getItem(k)||'null'):localStorage.setItem(k,JSON.stringify(v));
+const pd=s=>{const[y,m,d]=s.split('-');return new Date(+y,m-1,+d)},iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const mins=t=>{const[h,m]=t.split(':');return h*60+ +m},monday=d=>{d=new Date(d);d.setDate(d.getDate()-(d.getDay()+6)%7);d.setHours(0,0,0,0);return d};
+const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h},col=n=>`hsl(${hue(n)} 60% 60%)`,bg=n=>`hsl(${hue(n)} 40% 22%)`;
+let S={g:null,ev:[],meta:{},wk:monday(new Date()),view:'week',hide:new Set(),sub:'',all:false};
+const q=new URLSearchParams(location.search);
+
+function parseGroup(v){const m=v.toUpperCase().match(/\b(1[1-4][A-Z][0-9])\b/)||v.toUpperCase().match(/O(1[1-4][A-Z][0-9])/);return m?m[1]:v.toUpperCase().replace(/[^0-9A-Z]/g,'')}
+function home(){
+ const rec=ls('rec')||[];
+ $('#app').innerHTML=`<div class="w"><h1>Twój plan zajęć z PK, wreszcie czytelny.</h1>
+ <p class="mut" style="font-size:20px">Wklej link do planu z <code>podzial.mech.pk.edu.pl</code> (albo sam kod grupy) — dostaniesz kalendarz tygodniowy z pełnymi nazwami przedmiotów, prowadzącymi i salami, przefiltrowany pod Twoją grupę.</p>
+ <input id="u" placeholder="https://podzial.mech.pk.edu.pl/stacjonarne/..." style="width:100%;padding:18px"><button class="pri" style="width:100%;margin-top:12px;padding:16px" onclick="open_(parseGroup($('#u').value))">Pokaż plan</button>
+ ${rec.length?`<div class="cap">Ostatnio oglądane</div>${rec.map(g=>`<span class="chip" onclick="open_('${g}')">${g}</span>`).join('')}`:''}
+ <div class="cap">Albo wybierz grupę (Wydział Mechaniczny, stacjonarne)</div>
+ ${Object.entries(GROUPS).map(([y,l])=>`<div style="display:flex;gap:14px"><b class="mut" style="width:24px;padding-top:8px">${y}</b><div>${l.split(' ').map(g=>`<span class="chip" onclick="open_('${y}${g}')">${y}${g}</span>`).join('')}</div></div>`).join('')}
+ <div class="feat"><b>Tydzień po tygodniu</b><span class="mut">prawdziwe daty, bez rozszyfrowywania siatki z 19 kolumnami.</span></div>
+ <div class="feat"><b>Tylko Twoje zajęcia</b><span class="mut">wybierz grupę laboratoryjną/projektową i język, reszta znika.</span></div>
+ <div class="feat"><b>Do Google Calendar</b><span class="mut">eksport do pliku .ics jednym kliknięciem.</span></div></div>`;
+ history.replaceState(0,'','/');
+}
+async function open_(g){
+ if(!g)return;S.g=g;
+ $('#app').innerHTML=`<header><span onclick="home()" style="cursor:pointer;font-size:26px">📅</span><input id="gi" value="${g}" onkeydown="event.key=='Enter'&&open_(parseGroup(this.value))"><button class="pri" onclick="open_(parseGroup($('#gi').value))">Pokaż</button></header><div class="w mut" style="padding-top:30px">Ładowanie…</div>`;
+ try{const r=await(await fetch('/api/plan?g='+g)).json();S.ev=r.events||[];S.meta=r}catch{S.ev=[];S.meta={}}
+ const f=ls('f:'+g)||{};S.hide=new Set(f.hide||[]);S.sub=f.sub||'';
+ ls('rec',[g,...(ls('rec')||[]).filter(x=>x!==g)].slice(0,3));history.replaceState(0,'','?g='+g);render();
+}
+const vis=()=>S.ev.filter(e=>S.all||(!S.hide.has(e.name)&&!S.hide.has(e.name+'|'+e.type+'|'+e.teacher)&&(!e.sub||!S.sub||e.sub===S.sub)));
+function render(){
+ const wk=S.wk,we=new Date(wk);we.setDate(we.getDate()+4);const n=S.ev.length?0:1;
+ const first=monday(pd(S.ev.map(e=>e.date).sort()[0]||iso(new Date()))),wn=Math.round((wk-first)/6048e5)+1;
+ const act=S.hide.size+(S.sub?1:0);
+ $('#app').innerHTML=`<header><span onclick="home()" style="cursor:pointer;font-size:26px">📅</span><input id="gi" value="${S.g}" onkeydown="event.key=='Enter'&&open_(parseGroup(this.value))"><button class="pri" onclick="open_(parseGroup($('#gi').value))">Pokaż</button></header>
+ <div class="w"><h2>Grupa ${S.g}</h2><div class="mut">Studia stacjonarne · Semestr zimowy 2026/2027 · ${S.meta.error?'błąd pobierania planu: '+S.meta.error:'aktualizacja PK: '+(S.meta.updated||'?')}</div>
+ <div class="row"><button class="btn" onclick="filt()">⚙ Moje grupy ${act?`<b style="background:var(--ac);color:#10131c;border-radius:99px;padding:2px 9px">${act}</b>`:''}</button><button class="btn" onclick="ics()">⬇ Do kalendarza</button><button class="btn" onclick="share()">🔗 Udostępnij</button></div>
+ <div class="row"><button class="btn" style="flex:0 0 52px" onclick="mv(-7)">‹</button><button class="btn" style="flex:0 0 70px" onclick="S.wk=monday(new Date());render()">Dziś</button><button class="btn" style="flex:0 0 52px" onclick="mv(7)">›</button>
+ <select onchange="S.wk=new Date(+this.value);render()">${Array.from({length:22},(_,i)=>{const a=new Date(first);a.setDate(a.getDate()+7*i);const b=new Date(a);b.setDate(b.getDate()+4);return`<option value="${+a}" ${+a==+wk?'selected':''}>Tydz. ${i+1} · ${a.getDate()}${a.getMonth()!=b.getMonth()?' '+MS[a.getMonth()]:''}–${b.getDate()} ${MS[b.getMonth()]}</option>`}).join('')}</select></div>
+ <div class="seg"><button class="${S.view=='week'?'on':''}" onclick="S.view='week';render()">Tydzień</button><button class="${S.view=='list'?'on':''}" onclick="S.view='list';render()">Lista</button></div>
+ ${S.view=='week'?weekV():listV()}
+ <p class="mut" style="font-size:14px;margin-top:24px">Plan jest kopiowany z serwera PK co 3 godziny. W razie wątpliwości sprawdź <a style="color:var(--ac)" href="https://podzial.mech.pk.edu.pl/" target="_blank">oryginalny plan</a>.</p></div>`;
+}
+const mv=d=>{S.wk.setDate(S.wk.getDate()+d);render()};
+const days=()=>[0,1,2,3,4].map(i=>{const d=new Date(S.wk);d.setDate(d.getDate()+i);return d});
+const evOf=d=>vis().filter(e=>e.date==iso(d)).sort((a,b)=>mins(a.s)-mins(b.s));
+function listV(){return days().map(d=>{const L=evOf(d),t=iso(d)==iso(new Date());return`<div class="day ${t?'today':''}"><div class="h"><b>${DN[d.getDay()]}</b> <span class="mut">${d.getDate()} ${MN[d.getMonth()]}</span></div>${L.length?L.map(e=>`<div class="ev" onclick="det(${e.id})"><div class="t">${e.s}<span>${e.e}</span></div><div class="bar" style="background:${col(e.name)}"></div><div><b>${e.name}</b><div class="mut">${[TYPES[e.type],e.room,e.teacher].filter(Boolean).join(' · ')}</div></div></div>`).join(''):'<div class="ev mut">Brak zajęć</div>'}</div>`}).join('')}
+function weekV(){const H0=7,PX=60,D=days(),now=new Date();
+ let h=`<div id="grid"><div></div>${D.map(d=>`<div class="gh ${iso(d)==iso(now)?'today':''}"><b>${DN[d.getDay()].slice(0,3)}</b><br>${d.getDate()}.${d.getMonth()+1}</div>`).join('')}`;
+ h+=`<div style="position:relative;height:${14*PX}px">${Array.from({length:14},(_,i)=>`<span class="hl" style="top:${i*PX+2}px">${H0+i}:00</span>`).join('')}</div>`;
+ D.forEach(d=>{h+=`<div class="col" style="height:${14*PX}px">${Array.from({length:14},(_,i)=>`<div class="hr" style="top:${i*PX}px"></div>`).join('')}${evOf(d).map(e=>{const a=mins(e.s),b=mins(e.e);return`<div class="blk" onclick="det(${e.id})" style="top:${(a-H0*60)*PX/60}px;height:${(b-a)*PX/60-2}px;left:2px;right:2px;background:${bg(e.name)};border-color:${col(e.name)}"><small>${TYPES[e.type]||''}</small><b>${e.name}</b><br>${e.s}–${e.e}<br>${e.room}</div>`}).join('')}</div>`});
+ return h+'</div>'}
+function sheet(h){$('#shc').innerHTML=h;$('#sh').classList.add('on')}
+$('#sh').onclick=e=>{if(e.target.id=='sh')$('#sh').classList.remove('on')};
+const X=`<button class="btn" style="flex:0;float:right" onclick="$('#sh').classList.remove('on')">✕</button>`;
+function det(id){const e=S.ev.find(x=>x.id==id),all=S.ev.filter(x=>x.name==e.name&&x.type==e.type).sort((a,b)=>a.date<b.date?-1:1),t=iso(new Date());
+ sheet(`${X}<span class="badge" style="background:${bg(e.name)}">${TYPES[e.type]}</span><h2 style="font-size:28px;margin:10px 0">${e.name}</h2><hr style="border-color:var(--bd)">
+ <p>🕒 ${DN[pd(e.date).getDay()]}, ${pd(e.date).getDate()} ${MN[pd(e.date).getMonth()]}<br><span class="mut">${e.s}–${e.e} · ${mins(e.e)-mins(e.s)} min</span></p>${e.room?`<p>📍 Sala ${e.room.split(' ')[0]}<br><span class="mut">budynek ${e.room.split(' ')[1]||''}</span></p>`:''}${e.teacher?`<p>👤 ${e.teacher}</p>`:''}<p>👥 ${S.g}</p>
+ <p>📆 ${all.length} terminów w planie</p><div class="cap">Wszystkie terminy</div>${all.map(x=>{const d=pd(x.date);return`<span class="chip ${x.id==id?'on':''} ${x.date<t?'off':''}">${['Nd','Pon','Wt','Śr','Czw','Pt','Sob'][d.getDay()]} ${d.getDate()}.${d.getMonth()+1}</span>`}).join('')}`)}
+let NM=[],KS=[];
+const tg=i=>{const n=NM[i];S.hide.has(n)?S.hide.delete(n):S.hide.add(n);sv()};
+const tk=i=>{const k=KS[i];S.hide.has(k)?S.hide.delete(k):S.hide.add(k);sv();filt()};
+const sn=t=>{const w=t.split(' ');return w[w.length-2]||t};
+function row(n,i){const c=[...new Set(S.ev.filter(e=>e.name==n&&e.teacher).map(e=>e.type+'|'+e.teacher))];
+ return `<label class="sb"><input type="checkbox" style="flex:0" ${S.hide.has(n)?'':'checked'} onchange="tg(${i})"><span class="dot" style="background:${col(n)}"></span>${n}</label>`+(c.length>1?`<div style="padding:0 0 8px 24px">${c.map(x=>{const[t,h]=x.split('|'),k=n+'|'+x,j=KS.push(k)-1;return`<span class="chip ${S.hide.has(k)?'off':'on'}" onclick="tk(${j})">${t} · ${sn(h)}</span>`}).join('')}</div>`:'')}
+function filt(){KS=[];const names=NM=[...new Set(S.ev.map(e=>e.name))].sort(),subs=[...new Set(S.ev.map(e=>e.sub).filter(Boolean))].sort();
+ sheet(`${X}<h2 style="font-size:26px;margin:0 0 12px">Moje grupy i przedmioty</h2>${subs.length?`<div class="cap">Twoja grupa</div>${['',...subs].map(s=>`<span class="chip ${S.sub==s?'on':''}" onclick="S.sub='${s}';sv();filt()">${s||'Wszystkie'}</span>`).join('')}`:''}
+ <div class="cap">Przedmioty</div>${names.map(row).join('')}
+ <div class="row"><button class="btn" onclick="S.hide.clear();S.sub='';sv();filt()">Pokaż wszystko</button><button class="pri" onclick="$('#sh').classList.remove('on');render()">Gotowe</button></div>`)}
+const sv=()=>ls('f:'+S.g,{hide:[...S.hide],sub:S.sub});
+function ics(){const z=(d,t)=>d.replace(/-/g,'')+'T'+t.replace(':','').padStart(4,'0')+'00';
+ const b=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//plan-pk//PL',...vis().flatMap(e=>['BEGIN:VEVENT',`UID:${S.g}-${e.id}@plan-pk`,`DTSTAMP:${z(iso(new Date()),'0:00')}`,`DTSTART;TZID=Europe/Warsaw:${z(e.date,e.s)}`,`DTEND;TZID=Europe/Warsaw:${z(e.date,e.e)}`,`SUMMARY:${e.name} (${TYPES[e.type]})`,`LOCATION:${e.room}`,`DESCRIPTION:${e.teacher}`,'END:VEVENT']),'END:VCALENDAR'].join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([b],{type:'text/calendar'}));a.download=`plan-${S.g}.ics`;a.click()}
+async function share(){const u=location.origin+'/?g='+S.g;try{await navigator.share({url:u,title:'Plan '+S.g})}catch{navigator.clipboard.writeText(u)}}
+q.get('g')?open_(parseGroup(q.get('g'))):home();
+</script></body></html>
