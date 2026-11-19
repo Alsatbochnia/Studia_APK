@@ -86,7 +86,7 @@ export function parsePlan(html) {
 }
 
 async function getHtml(url) {
-  const r = await fetch(url); if (!r.ok) throw new Error('PK HTTP ' + r.status);
+  const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; plan-pk)', Accept: 'text/html' }, signal: AbortSignal.timeout(9000) }); if (!r.ok) throw new Error('PK HTTP ' + r.status);
   const b = Buffer.from(await r.arrayBuffer());
   let s = b.toString('utf8'); if (s.includes('\ufffd')) s = new TextDecoder('windows-1250').decode(b);
   return s;

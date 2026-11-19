@@ -63,7 +63,7 @@ function home(){
 async function open_(g){
  if(!g)return;S.g=g;
  $('#app').innerHTML=`<header><span onclick="home()" style="cursor:pointer;font-size:26px">📅</span><input id="gi" value="${g}" onkeydown="event.key=='Enter'&&open_(parseGroup(this.value))"><button class="pri" onclick="open_(parseGroup($('#gi').value))">Pokaż</button></header><div class="w mut" style="padding-top:30px">Ładowanie…</div>`;
- try{const r=await(await fetch('/api/plan?g='+g)).json();S.ev=r.events||[];S.meta=r}catch{S.ev=[];S.meta={}}
+ try{const f=await fetch('/api/plan?g='+g),t=await f.text();try{S.meta=JSON.parse(t)}catch{S.meta={error:'API zwróciło HTTP '+f.status+': '+t.slice(0,150).replace(/</g,'&lt;')}}S.ev=S.meta.events||[]}catch(e){S.ev=[];S.meta={error:String(e)}}
  const f=ls('f:'+g)||{};S.hide=new Set(f.hide||[]);S.sub=f.sub||'';
  ls('rec',[g,...(ls('rec')||[]).filter(x=>x!==g)].slice(0,3));history.replaceState(0,'','?g='+g);render();
 }
